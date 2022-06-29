@@ -109,8 +109,7 @@ class Atom(object):
 
 class Molecule(object):
 
-    formula_order = ['C', 'H', 'O', 'B', 'N', 'F', 'Mg',
-                     'P', 'S', 'Cl', 'Br']
+    formula_order = ['C', 'H', 'O', 'B', 'Br', 'Cl', 'F', 'Mg', 'N', 'P', 'S']
 
     def __init__(self, name=''):
         self.name = name
@@ -255,7 +254,3 @@ class Molecule(object):
             return self
         else:
             raise UnlockedMolecule
-
-
-if __name__ == '__main__':
-    octane = Molecule("octane").brancher(8).closer()

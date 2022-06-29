@@ -151,6 +151,7 @@ class Molecule(object):
                     self.branches[len(self.branches)].append(carbon)
                     self._molecular_weight += carbon.weight
                     self.formula_dict['C'] += 1
+            return self
         else:
             raise LockedMolecule
 
@@ -160,6 +161,7 @@ class Molecule(object):
                 atom1 = self.branches[branch1][atom_ind1 - 1]
                 atom2 = self.branches[branch2][atom_ind2 - 1]
                 Atom.bond(atom1, atom2)
+            return self
         else:
             raise LockedMolecule
 
@@ -172,6 +174,7 @@ class Molecule(object):
                 self.formula_dict[elt] += 1
                 self._molecular_weight -= old_weight
                 self._molecular_weight += atom.weight
+            return self
         else:
             raise LockedMolecule
 
@@ -184,6 +187,7 @@ class Molecule(object):
                 self.formula_dict[elt] += 1
                 self._molecular_weight += new_atom.weight
                 self.atoms.append(new_atom)
+            return self
         else:
             raise LockedMolecule
 
@@ -200,6 +204,7 @@ class Molecule(object):
                     self._molecular_weight += new_atom.weight
                     self.atoms.append(new_atom)
                     bonded_atoms.append((bonded_atoms[-1][1], new_atom))
+                return self
             except InvalidBond:
                 for atom1, atom2 in bonded_atoms[::-1]:
                     Atom.delete_bond(atom1, atom2)
@@ -221,6 +226,7 @@ class Molecule(object):
                     self.formula_dict['H'] += 1
                     self._molecular_weight += hydrogen.weight
                     self.atoms.append(hydrogen)
+            return self
         else:
             raise LockedMolecule
 
@@ -242,5 +248,6 @@ class Molecule(object):
             if not self.branches:
                 raise EmptyMolecule
             self.branches = {i + 1: branch for i, branch in enumerate(self.branches.values())}
+            return self
         else:
             raise UnlockedMolecule

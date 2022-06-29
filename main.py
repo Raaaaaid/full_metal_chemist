@@ -64,6 +64,19 @@ class Atom(object):
             pass
         return s + ')'
 
+    def mutate(self, elt):
+        new_valence_number = self.valence_numbers[elt]
+        try:
+            assert len(self.bonded_atoms) <= new_valence_number
+        except AssertionError:
+            raise InvalidBond
+        else:
+            old_element, old_weight = self.element, self.weight
+            self.element = elt
+            self.weight = self.atomic_weights[elt]
+            self.valence_number = new_valence_number
+            return old_element, old_weight
+
     @staticmethod
     def bond(atom1, atom2):
         try:
@@ -75,6 +88,18 @@ class Atom(object):
         else:
             atom1.bonded_atoms.append(atom2)
             atom2.bonded_atoms.append(atom1)
+
+    @staticmethod
+    def delete_bond(atom1, atom2):
+        try:
+            assert atom1 != atom2
+            assert atom1 in atom2.bonded_atoms
+            assert atom2 in atom1.bonded_atoms
+        except AssertionError:
+            raise InvalidBond
+        else:
+            atom1.bonded_atoms.remove(atom2)
+            atom2.bonded_atoms.remove(atom1)
 
 
 class Molecule(object):
@@ -126,9 +151,56 @@ class Molecule(object):
 
     def bounder(self, *args):
         if not self.locked:
-            for carbon1, branch1, carbon2, branch2 in args:
-                atom1 = self.branches[branch1][carbon1 - 1]
-                atom2 = self.branches[branch2][carbon2 - 1]
+            for atom_ind1, branch1, atom_ind2, branch2 in args:
+                atom1 = self.branches[branch1][atom_ind1 - 1]
+                atom2 = self.branches[branch2][atom_ind2 - 1]
                 Atom.bond(atom1, atom2)
+        else:
+            raise LockedMolecule
+
+    def mutate(self, *args):
+        if not self.locked:
+            for atom_ind, branch, elt in args:
+                atom = self.branches[branch][atom_ind - 1]
+                old_element, old_weight = atom.mutate(elt)
+                self.formula_dict[old_element] -= 1
+                self.formula_dict[elt] += 1
+                self._molecular_weight -= old_weight
+                self._molecular_weight += atom.weight
+        else:
+            raise LockedMolecule
+
+    def add(self, *args):
+        if not self.locked:
+            for atom_ind, branch, elt in args:
+                branch_atom = self.branches[branch][atom_ind - 1]
+                new_atom = Atom(elt=elt, id_=len(self.atoms) + 1)
+                Atom.bond(branch_atom, new_atom)
+                self.formula_dict[elt] += 1
+                self._molecular_weight += new_atom.weight
+                self.atoms.append(new_atom)
+        else:
+            raise LockedMolecule
+
+    def add_chaining(self, atom_ind, branch, elt, *elts):
+        if not self.locked:
+            bonded_atoms = []
+            try:
+                self.add((atom_ind, branch, elt))
+                bonded_atoms.append((self.branches[branch][atom_ind - 1], self.atoms[-1]))
+                for elt in elts:
+                    new_atom = Atom(elt=elt, id_=len(self.atoms) + 1)
+                    Atom.bond(self.atoms[-1], new_atom)
+                    self.formula_dict[elt] += 1
+                    self._molecular_weight += new_atom.weight
+                    self.atoms.append(new_atom)
+                    bonded_atoms.append((bonded_atoms[-1][1], new_atom))
+            except InvalidBond:
+                for atom1, atom2 in bonded_atoms[::-1]:
+                    Atom.delete_bond(atom1, atom2)
+                    self.atoms.remove(atom2)
+                    self.formula_dict[atom2.element] -= 1
+                    self._molecular_weight -= atom2.weight
+                raise InvalidBond
         else:
             raise LockedMolecule

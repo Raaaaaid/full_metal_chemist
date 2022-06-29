@@ -49,6 +49,8 @@ class Atom(object):
         'Br': 1,
     }
 
+    display_order = ['C', 'O', 'B', 'Br', 'Cl', 'F', 'Mg', 'N', 'P', 'S', 'H']
+
     def __init__(self, elt, id_):
         self.element = elt
         self.id = id_
@@ -65,9 +67,28 @@ class Atom(object):
     def __str__(self):
         s = f'Atom({self.element}.{self.id}'
         if self.bonded_atoms:
-            # TODO: implement __lt__ to sort self.bonded_atoms
-            pass
+            s += ': '
+            sorted_bonded_atoms = sorted(self.bonded_atoms)
+            for atom in sorted_bonded_atoms:
+                if atom.element == 'H':
+                    s += 'H,'
+                else:
+                    s += f'{atom.element}{atom.id},'
+            s = s[:-1]
         return s + ')'
+
+    def __lt__(self, other):
+        self_order_ind = self.display_order.index(self.element)
+        other_order_ind = self.display_order.index(other.element)
+        if self_order_ind < other_order_ind:
+            return True
+        elif self_order_ind == other_order_ind:
+            if self.id < other.id:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def mutate(self, elt):
         new_valence_number = self.valence_numbers[elt]

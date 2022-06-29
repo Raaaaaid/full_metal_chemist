@@ -151,6 +151,10 @@ class Molecule(object):
                     self.branches[len(self.branches)].append(carbon)
                     self._molecular_weight += carbon.weight
                     self.formula_dict['C'] += 1
+                current_branch = self.branches[len(self.branches)]
+                for i in range(len(current_branch) - 1):
+                    carbon1, carbon2 = current_branch[i], current_branch[i + 1]
+                    Atom.bond(carbon1, carbon2)
             return self
         else:
             raise LockedMolecule
@@ -251,3 +255,7 @@ class Molecule(object):
             return self
         else:
             raise UnlockedMolecule
+
+
+if __name__ == '__main__':
+    octane = Molecule("octane").brancher(8).closer()

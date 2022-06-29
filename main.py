@@ -1,5 +1,6 @@
 
 from collections import defaultdict
+from copy import copy
 
 
 class UnlockedMolecule(Exception):
@@ -11,6 +12,10 @@ class LockedMolecule(Exception):
 
 
 class InvalidBond(Exception):
+    pass
+
+
+class EmptyMolecule(Exception):
     pass
 
 
@@ -204,3 +209,38 @@ class Molecule(object):
                 raise InvalidBond
         else:
             raise LockedMolecule
+
+    def closer(self):
+        if not self.locked:
+            self.locked = True
+            atoms_to_check = copy(self.atoms)
+            for atom in atoms_to_check:
+                while len(atom.bonded_atoms) < atom.valence_number:
+                    hydrogen = Atom(elt='H', id_=len(self.atoms) + 1)
+                    Atom.bond(atom, hydrogen)
+                    self.formula_dict['H'] += 1
+                    self._molecular_weight += hydrogen.weight
+                    self.atoms.append(hydrogen)
+        else:
+            raise LockedMolecule
+
+    def unlock(self):
+        if self.locked:
+            self.locked = False
+            atoms_to_check = copy(self.atoms)
+            for atom in atoms_to_check:
+                if atom.element == 'H':
+                    Atom.delete_bond(atom, atom.bonded_atoms[0])
+                    self.atoms.remove(atom)
+                    self.formula_dict['H'] -= 1
+                    self._molecular_weight -= atom.weight
+            for i, branch in self.branches.items():
+                self.branches[i] = [atom for atom in branch if atom.element != 'H']
+            for i, atom in enumerate(self.atoms):
+                atom.id = i + 1
+            self.branches = {i: branch for i, branch in self.branches.items() if branch}
+            if not self.branches:
+                raise EmptyMolecule
+            self.branches = {i + 1: branch for i, branch in enumerate(self.branches.values())}
+        else:
+            raise UnlockedMolecule

@@ -260,7 +260,8 @@ class Molecule(object):
             atoms_to_check = copy(self.atoms)
             for atom in atoms_to_check:
                 if atom.element == 'H':
-                    Atom.delete_bond(atom, atom.bonded_atoms[0])
+                    if atom.bonded_atoms:
+                        Atom.delete_bond(atom, atom.bonded_atoms[0])
                     self.atoms.remove(atom)
                     self.formula_dict['H'] -= 1
                     self._molecular_weight -= atom.weight
